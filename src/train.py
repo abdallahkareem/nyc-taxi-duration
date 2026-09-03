@@ -10,6 +10,9 @@ from sklearn.preprocessing import OneHotEncoder
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType, StringTensorType
 
+import mlflow
+import mlflow.sklearn
+
 from src.loader import load_data
 from src.preprocessing import preprocess
 from src.features import create_features
@@ -21,7 +24,7 @@ load_dotenv()
 
 def main():
 
- 
+
 
     # Load Data
     data_path = os.getenv("DATA_PATH")
@@ -31,7 +34,7 @@ def main():
     print(f"Loaded {len(df)} rows")
 
 
-  
+
     # Preprocessing
     df = preprocess(df)
 
@@ -68,9 +71,7 @@ def main():
     print(f"Test size: {len(X_test)}")
 
 
-    # =========================
-    # Preprocessing Pipeline
-    # =========================
+
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -90,78 +91,74 @@ def main():
     )
 
 
-    # =========================
-    # Transform Data
-    # =========================
 
     X_train_transformed = preprocessor.fit_transform(X_train)
 
     X_test_transformed = preprocessor.transform(X_test)
 
 
-    # =========================
-    # Train Model
-    # =========================
+    mlflow.set_experiment("NYC Taxi Duration")
 
-    model = LinearRegression()
+    with mlflow.start_run() as run:
+        mlflow.log_param("model_type", "LinearRegression")
+        mlflow.log_param("preprocessor", "ColumnTransformer with OneHotEncoder and passthrough")
+        mlflow.log_param("train_size", len(X_train))
+        mlflow.log_param("test_size", len(X_test))
 
-    model.fit(
-        X_train_transformed,
-        y_train,
-    )
+        # Train Model
+        model = LinearRegression()
 
-
-    # =========================
-    # Evaluation
-    # =========================
-
-    rmse = evaluate_model(
-        model,
-        X_test_transformed,
-        y_test,
-    )
-
-    print(f"RMSE: {rmse:.2f} minutes")
-
-
-    # =========================
-    # Convert to ONNX
-    # =========================
-
-    print("Converting model to ONNX...")
-
-    n_features = X_train_transformed.shape[1]
-
-    initial_type = [
-        (
-            "float_input",
-            FloatTensorType(
-                [None, n_features]
-            ),
-        )
-    ]
-
-    onnx_model = convert_sklearn(
-        model,
-        initial_types=initial_type,
-        target_opset=15,
-    )
-
-
-    # =========================
-    # Save ONNX Model
-    # =========================
-
-    os.makedirs("models", exist_ok=True)
-
-    model_path = "models/model.onnx"
-
-    with open(model_path, "wb") as f:
-        f.write(
-            onnx_model.SerializeToString()
+        model.fit(
+            X_train_transformed,
+            y_train,
         )
 
-    print(f"Model saved successfully: {model_path}")
+
+        # Evaluation
+        rmse = evaluate_model(
+            model,
+            X_test_transformed,
+            y_test,
+        )
+
+        mlflow.log_metric("rmse", rmse)
+
+        print(f"RMSE: {rmse:.2f} minutes")
+
+
+        # Convert to ONNX
+        print("Converting model to ONNX...")
+
+        n_features = X_train_transformed.shape[1]
+
+        initial_type = [
+            (
+                "float_input",
+                FloatTensorType(
+                    [None, n_features]
+                ),
+            )
+        ]
+
+        onnx_model = convert_sklearn(
+            model,
+            initial_types=initial_type,
+            target_opset=15,
+        )
+
+
+        os.makedirs("models", exist_ok=True)
+
+        model_path = "models/model.onnx"
+
+        with open(model_path, "wb") as f:
+            f.write(
+                onnx_model.SerializeToString()
+            )
+
+        mlflow.log_artifact(model_path, artifact_path="model")
+
+        print(f"Model saved successfully: {model_path}")
 
 
 if __name__ == "__main__":
