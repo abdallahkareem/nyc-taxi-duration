@@ -18,5 +18,8 @@ dependencies = [
     "skl2onnx>=1.20.0",
 ]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 
 
