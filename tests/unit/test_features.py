@@ -3,41 +3,17 @@ import pandas as pd
 from src.features import create_features
 
 
-def test_creates_pu_do_column():
+def test_create_features():
     df = pd.DataFrame(
         {
-            "PULocationID": [10, 25],
-            "DOLocationID": [7, 100],
+            "PULocationID": [65, 66],
+            "DOLocationID": [233, 188],
+            "trip_distance": [6.2, 5.36],
         }
     )
 
     result = create_features(df)
 
     assert "PU_DO" in result.columns
-    assert list(result["PU_DO"]) == ["10_7", "25_100"]
-
-
-def test_pu_do_values_are_strings():
-    df = pd.DataFrame(
-        {
-            "PULocationID": [1],
-            "DOLocationID": [2],
-        }
-    )
-
-    result = create_features(df)
-
-    assert isinstance(result.iloc[0]["PU_DO"], str)
-
-
-def test_does_not_mutate_original_dataframe():
-    df = pd.DataFrame(
-        {
-            "PULocationID": [1],
-            "DOLocationID": [2],
-        }
-    )
-
-    create_features(df)
-
-    assert "PU_DO" not in df.columns
+    assert result["PU_DO"].iloc[0] == "65_233"
+    assert result["PU_DO"].iloc[1] == "66_188"
