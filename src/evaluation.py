@@ -1,6 +1,6 @@
 import numpy as np
 
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 
 def evaluate_model(model, X_test, y_test) -> float:
@@ -8,8 +8,7 @@ def evaluate_model(model, X_test, y_test) -> float:
 
     predictions = model.predict(X_test)
 
-    rmse = np.sqrt(
-        mean_squared_error(y_test, predictions)
-    )
+    rmse = np.sqrt(mean_squared_error(y_test, predictions))
+    mae = mean_absolute_error(y_test, predictions)
 
-    return rmse
+    return rmse, mae
