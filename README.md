@@ -1,9 +1,10 @@
-NYC Taxi Trip Duration Prediction
+# NYC Taxi Trip Duration Prediction
 
 An end-to-end machine learning project for predicting NYC taxi trip duration, with a focus on building a reproducible and maintainable ML pipeline following MLOps practices.
 
-Pipeline
+## Pipeline
 
+```
 Data → Preprocessing → Feature Engineering → Training
                                       ↓
                               Experiment Tracking
@@ -11,49 +12,58 @@ Data → Preprocessing → Feature Engineering → Training
                               Model Evaluation
                                       ↓
                          Docker → CI → Deployment
+```
 
-MLOps
+## MLOps
 
-Practice| Implementation
-Data Versioning| DVC
-Experiment Tracking| MLflow
-Reproducibility| DVC + locked dependencies
-Testing| Pytest
-Code Quality| Pre-commit
-Containerization| Docker
-CI| GitHub Actions
+| Practice | Implementation |
+|---|---|
+| Data Versioning | DVC |
+| Experiment Tracking | MLflow |
+| Reproducibility | DVC + locked dependencies |
+| Testing | Pytest |
+| Code Quality | Pre-commit |
+| Containerization | Docker |
+| CI | GitHub Actions |
 
-Data
+## Data
 
 The dataset contains NYC taxi trips with information such as pickup/dropoff locations, passenger count, and timestamps.
 
 A chronological 80/20 split is used to evaluate the model on later trips and reduce the risk of temporal data leakage.
 
-Model Evaluation
+## Model Evaluation
 
-Metric| Result
-MAE| —
-RMSE| —
-R²| —
+| Metric | Result |
+|---|---|
+| MAE | — |
+| RMSE | — |
+| R² | — |
 
-Running the Project
+## Running the Project
 
+```bash
 git clone https://github.com/abdallahkareem/nyc-taxi-duration.git
 cd nyc-taxi-duration
 
 uv sync
 dvc repro
 pytest
+```
 
 Run with Docker:
 
+```bash
 docker compose up --build
+```
 
-Project Structure
+## Project Structure
 
+```
 src/          # ML pipeline
 data/         # Dataset
 models/       # Model artifacts
 tests/        # Tests
 config/       # Configuration
 notebooks/    # Experiments
+```
