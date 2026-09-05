@@ -1,40 +1,17 @@
+import joblib
+import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
-import onnxruntime as ort
-import numpy as np
-import pandas as pd
-import joblib
-import os
 
 
 app = FastAPI(
     title="NYC Taxi Duration Prediction API",
-    description="Predict NYC taxi trip duration using an ONNX model",
-    version="1.0.0",
 )
 
 
-# =========================
-# Load Model & Preprocessor
-# =========================
-
-MODEL_PATH = os.path.join("models", "model.onnx")
-PREPROCESSOR_PATH = os.path.join("models", "preprocessor.pkl")
-
-session = ort.InferenceSession(
-    MODEL_PATH,
-    providers=["CPUExecutionProvider"],
-)
-
-preprocessor = joblib.load(PREPROCESSOR_PATH)
-
-input_name = session.get_inputs()[0].name
-output_name = session.get_outputs()[0].name
-
-
-# =========================
-# Request / Response Models
-# =========================
+# Load model and vectorizer
+model = joblib.load("models/model.pkl")
+dv = joblib.load("models/dv.pkl")
 
 
 class TaxiRequest(BaseModel):
@@ -42,36 +19,15 @@ class TaxiRequest(BaseModel):
     trip_distance: float
 
 
-class TaxiResponse(BaseModel):
-    predicted_duration_minutes: float
-
-
-# =========================
-# Routes
-# =========================
-
-
 @app.get("/")
 def root():
-    return {
-        "message": "NYC Taxi Duration Prediction API",
-        "status": "running",
-    }
+    return {"message": "NYC Taxi Duration Prediction API"}
 
 
-@app.get("/health")
-def health():
-    return {
-        "status": "healthy",
-        "model": "loaded",
-    }
-
-
-@app.post("/predict", response_model=TaxiResponse)
+@app.post("/predict")
 def predict(request: TaxiRequest):
-    # Create DataFrame with the same columns
-    # used during training
-    input_df = pd.DataFrame(
+    # Convert request to DataFrame
+    df = pd.DataFrame(
         [
             {
                 "PU_DO": request.PU_DO,
@@ -80,18 +36,13 @@ def predict(request: TaxiRequest):
         ]
     )
 
-    # Apply the SAME preprocessing used during training
-    processed_input = preprocessor.transform(input_df)
+    # Convert features to dictionary
+    features = df.to_dict(orient="records")
 
-    # Convert to dense float32 array
-    input_data = processed_input.toarray().astype(np.float32)
+    # Vectorize
+    X = dv.transform(features)
 
-    # ONNX prediction
-    prediction = session.run(
-        [output_name],
-        {input_name: input_data},
-    )
+    # Prediction
+    prediction = model.predict(X)[0]
 
-    duration = float(prediction[0][0][0])
-
-    return {"predicted_duration_minutes": duration}
+    return {"predicted_duration_minutes": float(prediction)}
